@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>给你的一段声音</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202124;
+      --muted: #5f6368;
+      --paper: #fffaf2;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --line: #dad7cd;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(100%, 440px);
+      text-align: center;
+    }
+
+    .cover {
+      width: min(72vw, 260px);
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      margin: 0 auto 28px;
+      display: block;
+      border: 1px solid var(--line);
+      background: #e9f3ef;
+    }
+
+    .cover[hidden] {
+      display: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    p {
+      margin: 12px 0 28px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    button {
+      width: 100%;
+      min-height: 54px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover,
+    button:focus-visible {
+      background: var(--accent-dark);
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 22px;
+    }
+
+    .hint {
+      min-height: 24px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="cover" src="./cover.jfif" alt="一张留给这段声音的照片" />
+    <h1>给你的一段声音</h1>
+    <p>点一下，就能听见我想说的话。</p>
+
+    <button id="playButton" type="button">点击播放</button>
+    <audio id="voice" controls preload="metadata">
+      <source src="./audio.mp3" type="audio/mpeg" />
+      你的浏览器不支持音频播放。
+    </audio>
+    <div class="hint" id="hint">如果没有声音，请确认手机没有静音。</div>
+  </main>
+
+  <script>
+    const audio = document.querySelector("#voice");
+    const button = document.querySelector("#playButton");
+    const hint = document.querySelector("#hint");
+    const cover = document.querySelector(".cover");
+
+    cover.addEventListener("error", () => {
+      cover.hidden = true;
+    });
+
+    async function playVoice() {
+      try {
+        await audio.play();
+        button.textContent = "正在播放";
+        hint.textContent = "你可以用下方进度条暂停或重听。";
+      } catch (error) {
+        hint.textContent = "浏览器需要你再点一次播放按钮。";
+      }
+    }
+
+    button.addEventListener("click", playVoice);
+
+    document.addEventListener("click", (event) => {
+      if (event.target === button || !audio.paused) {
+        return;
+      }
+
+      playVoice();
+    }, { once: true });
+  </script>
+</body>
+</html>
