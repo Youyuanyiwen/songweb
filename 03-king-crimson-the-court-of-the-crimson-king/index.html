@@ -8,34 +8,29 @@
   <style>
     :root {
       color-scheme: light;
+      --bg: #fffaf2;
+      --panel: #fffdf8;
       --ink: #202124;
       --muted: #5f6368;
-      --paper: #fffaf2;
-      --accent: #0f766e;
-      --accent-dark: #115e59;
       --line: #dad7cd;
+      --accent: #0f766e;
+      --accent-strong: #115e59;
+      --active-bg: #e6f4f1;
     }
-
-    * {
-      box-sizing: border-box;
-    }
-
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
       padding: 24px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--paper);
+      background: var(--bg);
       color: var(--ink);
     }
-
     main {
-      width: min(100%, 440px);
+      width: min(100%, 520px);
+      margin: 0 auto;
       text-align: center;
     }
-
     .cover {
       width: min(72vw, 260px);
       aspect-ratio: 1;
@@ -46,20 +41,17 @@
       border: 1px solid var(--line);
       background: #e9f3ef;
     }
-
     h1 {
       margin: 0;
       font-size: 28px;
       line-height: 1.2;
     }
-
     p {
-      margin: 12px 0 28px;
+      margin: 12px 0 24px;
       color: var(--muted);
       font-size: 16px;
       line-height: 1.65;
     }
-
     button {
       width: 100%;
       min-height: 54px;
@@ -71,63 +63,156 @@
       font-weight: 700;
       cursor: pointer;
     }
-
     button:hover,
     button:focus-visible {
-      background: var(--accent-dark);
+      background: var(--accent-strong);
     }
-
     audio {
       width: 100%;
-      margin-top: 22px;
+      margin-top: 18px;
     }
-
     .hint {
       min-height: 24px;
-      margin-top: 16px;
+      margin-top: 14px;
       color: var(--muted);
       font-size: 14px;
+    }
+    .lyrics-wrap {
+      margin-top: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+      text-align: left;
+    }
+    .lyrics-title {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .lyrics {
+      max-height: 320px;
+      overflow: auto;
+      scroll-behavior: smooth;
+    }
+    .line {
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--muted);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .line.active {
+      background: var(--active-bg);
+      color: var(--accent-strong);
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
   <main>
-    <img class="cover" src="./cover.jpeg" alt="King Crimson - The Court Of The Crimson King 封面" />
+    <img class="cover" src="./cover.jpeg" alt="The Court Of The Crimson King cover" />
     <h1>King Crimson</h1>
     <p>The Court Of The Crimson King</p>
-
     <button id="playButton" type="button">点击播放</button>
     <audio id="voice" controls preload="metadata">
       <source src="./audio.mp3" type="audio/mpeg" />
       你的浏览器不支持音频播放。
     </audio>
     <div class="hint" id="hint">如果没有声音，请确认手机没有静音。</div>
+    <section class="lyrics-wrap">
+      <h2 class="lyrics-title">歌词</h2>
+      <div class="lyrics" id="lyrics">
+        <div class="line">正在加载歌词...</div>
+      </div>
+    </section>
   </main>
-
   <script>
     const audio = document.querySelector("#voice");
     const button = document.querySelector("#playButton");
     const hint = document.querySelector("#hint");
+    const lyricsBox = document.querySelector("#lyrics");
+    let lyricLines = [];
+    let activeIndex = -1;
+
+    function parseLrc(text) {
+      const rows = [];
+      for (const line of text.split(/\r?\n/)) {
+        const matches = [...line.matchAll(/\[(\d{2}):(\d{2})(?:\.(\d{1,3}))?\]/g)];
+        const content = line.replace(/\[[^\]]+\]/g, "").trim();
+        if (!matches.length || !content) continue;
+        for (const match of matches) {
+          const fraction = (match[3] || "").padEnd(3, "0");
+          const time = Number(match[1]) * 60 + Number(match[2]) + Number(fraction) / 1000;
+          rows.push({ time, text: content });
+        }
+      }
+      return rows.sort((a, b) => a.time - b.time);
+    }
+
+    function renderLyrics(lines) {
+      if (!lines.length) {
+        lyricsBox.innerHTML = '<div class="line">没有可显示的歌词。</div>';
+        return;
+      }
+      lyricsBox.innerHTML = "";
+      for (const item of lines) {
+        const div = document.createElement("div");
+        div.className = "line";
+        div.textContent = item.text;
+        lyricsBox.appendChild(div);
+      }
+    }
+
+    function syncLyrics() {
+      if (!lyricLines.length) return;
+      const current = audio.currentTime;
+      let nextIndex = -1;
+      for (let i = lyricLines.length - 1; i >= 0; i--) {
+        if (current >= lyricLines[i].time) {
+          nextIndex = i;
+          break;
+        }
+      }
+      if (nextIndex === activeIndex) return;
+      const nodes = lyricsBox.querySelectorAll(".line");
+      if (activeIndex >= 0 && nodes[activeIndex]) nodes[activeIndex].classList.remove("active");
+      activeIndex = nextIndex;
+      if (activeIndex >= 0 && nodes[activeIndex]) {
+        nodes[activeIndex].classList.add("active");
+        nodes[activeIndex].scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+    }
+
+    async function loadLyrics() {
+      try {
+        const response = await fetch("./lyrics.lrc");
+        if (!response.ok) throw new Error("lyrics missing");
+        lyricLines = parseLrc(await response.text());
+        renderLyrics(lyricLines);
+      } catch (error) {
+        lyricsBox.innerHTML = '<div class="line">歌词暂时无法显示。</div>';
+      }
+    }
 
     async function playVoice() {
       try {
         await audio.play();
         button.textContent = "正在播放";
-        hint.textContent = "你可以用下方进度条暂停或重听。";
+        hint.textContent = "歌词会跟随进度自动滚动。";
       } catch (error) {
         hint.textContent = "浏览器需要你再点一次播放按钮。";
       }
     }
 
     button.addEventListener("click", playVoice);
-
+    audio.addEventListener("timeupdate", syncLyrics);
     document.addEventListener("click", (event) => {
-      if (event.target === button || !audio.paused) {
-        return;
-      }
-
+      if (event.target === button || !audio.paused) return;
       playVoice();
     }, { once: true });
+
+    loadLyrics();
   </script>
 </body>
 </html>
