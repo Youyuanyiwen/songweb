@@ -276,7 +276,7 @@ $entries = @(
 )
 
 $dirs = Get-ChildItem -LiteralPath $sourceRoot -Directory |
-  Where-Object { $_.Name -match "^(0[4-9]|1[0-9]|2[0-6])" } |
+  Where-Object { $_.Name -match "^(0[4-9]|1[0-9]|2[0-9]|3[0-1])" } |
   Sort-Object Name
 
 foreach ($dir in $dirs) {
