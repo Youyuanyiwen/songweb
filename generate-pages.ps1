@@ -282,6 +282,7 @@ $dirs = Get-ChildItem -LiteralPath $sourceRoot -Directory |
 foreach ($dir in $dirs) {
   $num = $dir.Name.Substring(0, 2)
   $base = $dir.Name.Substring(2)
+  $base = $base.Replace([string][char]0x2013, "-").Replace([string][char]0x2014, "-")
   $slug = "$num-$(Get-Slug $base)"
   $target = Join-Path $publishRoot $slug
   New-Item -ItemType Directory -Path $target -Force | Out-Null
@@ -348,6 +349,8 @@ foreach ($entry in $entries) {
   $linkBuilder.Add("https://youyuanyiwen.github.io/songweb/$($entry.Slug)/")
   $linkBuilder.Add("")
 }
-[System.IO.File]::WriteAllLines("H:\链接收集.txt", $linkBuilder, [System.Text.UTF8Encoding]::new($false))
+$linkFileName = "{0}{1}{2}{3}.txt" -f [char]0x94FE, [char]0x63A5, [char]0x6536, [char]0x96C6
+$linkFilePath = Join-Path -Path "H:\" -ChildPath $linkFileName
+[System.IO.File]::WriteAllLines($linkFilePath, $linkBuilder, [System.Text.UTF8Encoding]::new($false))
 
 Get-ChildItem -LiteralPath $publishRoot | Sort-Object Name | Select-Object Name,Mode,Length,LastWriteTime
