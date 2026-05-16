@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
+  <link rel="preload" href="./audio.mp3" as="audio" type="audio/mpeg" />
   <title>King Crimson - Thela Hun Ginjeet</title>
   <style>
     :root {
@@ -123,7 +124,7 @@
     <h1>King Crimson - Thela Hun Ginjeet</h1>
     <p>Tap play and stay with the whole piece.</p>
     <button id="playButton" type="button">Play</button>
-    <audio id="voice" controls preload="metadata">
+    <audio id="voice" controls preload="auto">
       <source src="./audio.mp3" type="audio/mpeg" />
       Your browser does not support audio playback.
     </audio>
@@ -140,6 +141,8 @@
     const button = document.querySelector("#playButton");
     const hint = document.querySelector("#hint");
     const cover = document.querySelector(".cover");
+
+    audio.load();
 
     cover.addEventListener("error", () => {
       cover.hidden = true;

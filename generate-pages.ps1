@@ -1,7 +1,10 @@
-$ErrorActionPreference = "Stop"
 
-$sourceRoot = "H:\VVVVV"
-$publishRoot = "H:\songweb-publish"
+
+$scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$workspaceRoot = Split-Path -Parent $scriptRoot
+
+$sourceRoot = Join-Path $workspaceRoot "source-media"
+$publishRoot = $scriptRoot
 
 function Get-Slug([string]$name) {
   $slug = $name.ToLowerInvariant()
@@ -110,6 +113,7 @@ function Build-PageHtml([string]$pageTitle, [string]$songTitle, [string]$coverFi
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
+  <link rel="preload" href="./audio.mp3" as="audio" type="audio/mpeg" />
   <title>$pageTitle</title>
   <style>
     :root {
@@ -229,7 +233,7 @@ function Build-PageHtml([string]$pageTitle, [string]$songTitle, [string]$coverFi
     <h1>$songTitle</h1>
     <p>Tap play and stay with the whole piece.</p>
     <button id="playButton" type="button">Play</button>
-    <audio id="voice" controls preload="metadata">
+    <audio id="voice" controls preload="auto">
       <source src="./audio.mp3" type="audio/mpeg" />
       Your browser does not support audio playback.
     </audio>
@@ -241,6 +245,8 @@ $lyricsSection
     const button = document.querySelector("#playButton");
     const hint = document.querySelector("#hint");
     const cover = document.querySelector(".cover");
+
+    audio.load();
 
     cover.addEventListener("error", () => {
       cover.hidden = true;
@@ -349,8 +355,7 @@ foreach ($entry in $entries) {
   $linkBuilder.Add("https://youyuanyiwen.github.io/songweb/$($entry.Slug)/")
   $linkBuilder.Add("")
 }
-$linkFileName = "{0}{1}{2}{3}.txt" -f [char]0x94FE, [char]0x63A5, [char]0x6536, [char]0x96C6
-$linkFilePath = Join-Path -Path "H:\" -ChildPath $linkFileName
+$linkFilePath = Join-Path -Path $workspaceRoot -ChildPath "links.txt"
 [System.IO.File]::WriteAllLines($linkFilePath, $linkBuilder, [System.Text.UTF8Encoding]::new($false))
 
 Get-ChildItem -LiteralPath $publishRoot | Sort-Object Name | Select-Object Name,Mode,Length,LastWriteTime
