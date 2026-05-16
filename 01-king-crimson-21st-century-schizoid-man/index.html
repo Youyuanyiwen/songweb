@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>King Crimson - 21st Century Schizoid Man</title>
+  <title>King Crimson - Starless</title>
   <style>
     :root {
       color-scheme: light;
@@ -41,9 +41,7 @@
       border: 1px solid var(--line);
       background: #e9f3ef;
     }
-    .cover[hidden] {
-      display: none;
-    }
+    .cover[hidden] { display: none; }
     h1 {
       margin: 0;
       font-size: 28px;
@@ -67,9 +65,7 @@
       cursor: pointer;
     }
     button:hover,
-    button:focus-visible {
-      background: var(--accent-strong);
-    }
+    button:focus-visible { background: var(--accent-strong); }
     audio {
       width: 100%;
       margin-top: 18px;
@@ -80,7 +76,8 @@
       color: var(--muted);
       font-size: 14px;
     }
-    .lyrics-wrap {
+    .lyrics-wrap,
+    .instrumental-wrap {
       margin-top: 26px;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -110,23 +107,31 @@
       color: var(--accent-strong);
       font-weight: 700;
     }
+    .instrumental-card {
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: var(--accent-strong);
+      background: var(--active-bg);
+      line-height: 1.7;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
   <main>
-    <img class="cover" src="./cover.jfif" alt="21st Century Schizoid Man cover" />
-    <h1>King Crimson</h1>
-    <p>21st Century Schizoid Man</p>
-    <button id="playButton" type="button">点击播放</button>
+    <img class="cover" src="./cover.jfif" alt="King Crimson - Starless cover" />
+    <h1>King Crimson - Starless</h1>
+    <p>Tap play and stay with the whole piece.</p>
+    <button id="playButton" type="button">Play</button>
     <audio id="voice" controls preload="metadata">
       <source src="./audio.mp3" type="audio/mpeg" />
-      你的浏览器不支持音频播放。
+      Your browser does not support audio playback.
     </audio>
-    <div class="hint" id="hint">如果没有声音，请确认手机没有静音。</div>
+    <div class="hint" id="hint">If you hear nothing, check that your phone is not muted.</div>
     <section class="lyrics-wrap">
-      <h2 class="lyrics-title">歌词</h2>
+      <h2 class="lyrics-title">Lyrics</h2>
       <div class="lyrics" id="lyrics">
-        <div class="line">正在加载歌词...</div>
+        <div class="line">Loading lyrics...</div>
       </div>
     </section>
   </main>
@@ -135,13 +140,30 @@
     const button = document.querySelector("#playButton");
     const hint = document.querySelector("#hint");
     const cover = document.querySelector(".cover");
-    const lyricsBox = document.querySelector("#lyrics");
-    let lyricLines = [];
-    let activeIndex = -1;
 
     cover.addEventListener("error", () => {
       cover.hidden = true;
     });
+
+    async function playVoice() {
+      try {
+        await audio.play();
+        button.textContent = "Playing";
+        hint.textContent = "Lyrics will follow the playback.";
+      } catch (error) {
+        hint.textContent = "The browser needs one more tap on the play button.";
+      }
+    }
+
+    button.addEventListener("click", playVoice);
+    document.addEventListener("click", (event) => {
+      if (event.target === button || !audio.paused) return;
+      playVoice();
+    }, { once: true });
+
+    const lyricsBox = document.querySelector("#lyrics");
+    let lyricLines = [];
+    let activeIndex = -1;
 
     function parseLrc(text) {
       const rows = [];
@@ -160,7 +182,7 @@
 
     function renderLyrics(lines) {
       if (!lines.length) {
-        lyricsBox.innerHTML = '<div class="line">没有可显示的歌词。</div>';
+        lyricsBox.innerHTML = '<div class="line">No lyric lines were found.</div>';
         return;
       }
       lyricsBox.innerHTML = "";
@@ -199,27 +221,11 @@
         lyricLines = parseLrc(await response.text());
         renderLyrics(lyricLines);
       } catch (error) {
-        lyricsBox.innerHTML = '<div class="line">歌词暂时无法显示。</div>';
+        lyricsBox.innerHTML = '<div class="line">Lyrics are not available right now.</div>';
       }
     }
 
-    async function playVoice() {
-      try {
-        await audio.play();
-        button.textContent = "正在播放";
-        hint.textContent = "歌词会跟随进度自动滚动。";
-      } catch (error) {
-        hint.textContent = "浏览器需要你再点一次播放按钮。";
-      }
-    }
-
-    button.addEventListener("click", playVoice);
     audio.addEventListener("timeupdate", syncLyrics);
-    document.addEventListener("click", (event) => {
-      if (event.target === button || !audio.paused) return;
-      playVoice();
-    }, { once: true });
-
     loadLyrics();
   </script>
 </body>
